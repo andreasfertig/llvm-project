@@ -250,9 +250,9 @@ template <class T>
 struct default_delete
 {
     constexpr default_delete() noexcept = default;
-    template <class U> default_delete(const default_delete<U>&) noexcept;
+    template <class U> _LIBCPP_CONSTEXPR_AFTER_CXX20 default_delete(const default_delete<U>&) noexcept;
 
-    void operator()(T*) const noexcept;
+    _LIBCPP_CONSTEXPR_AFTER_CXX20 void operator()(T*) const noexcept;
 };
 
 template <class T>
@@ -1578,7 +1578,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     void deallocate(_Tp* __p, size_t __n) _NOEXCEPT {
         if (__libcpp_is_constant_evaluated()) {
-            ::operator delete(__p);
+            delete __p;
         } else {
             _VSTD::__libcpp_deallocate((void*)__p, __n * sizeof(_Tp), _LIBCPP_ALIGNOF(_Tp));
         }
@@ -3133,6 +3133,9 @@ inline _LIBCPP_INLINE_VISIBILITY _Tp
 __libcpp_atomic_refcount_increment(_Tp& __t) _NOEXCEPT
 {
 #if defined(_LIBCPP_HAS_BUILTIN_ATOMIC_SUPPORT) && !defined(_LIBCPP_HAS_NO_THREADS)
+    if (__libcpp_is_constant_evaluated())
+    return __t += 1;
+    else
     return __atomic_add_fetch(&__t, 1, __ATOMIC_RELAXED);
 #else
     return __t += 1;
@@ -3140,10 +3143,13 @@ __libcpp_atomic_refcount_increment(_Tp& __t) _NOEXCEPT
 }
 
 template <class _Tp>
-inline _LIBCPP_INLINE_VISIBILITY _Tp
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX20 _Tp
 __libcpp_atomic_refcount_decrement(_Tp& __t) _NOEXCEPT
 {
 #if defined(_LIBCPP_HAS_BUILTIN_ATOMIC_SUPPORT) && !defined(_LIBCPP_HAS_NO_THREADS)
+    if (__libcpp_is_constant_evaluated())
+    return __t -= 1;
+    else
     return __atomic_add_fetch(&__t, -1, __ATOMIC_ACQ_REL);
 #else
     return __t -= 1;
@@ -3179,12 +3185,12 @@ class _LIBCPP_TYPE_VIS __shared_count
 
 protected:
     long __shared_owners_;
-    virtual ~__shared_count();
+    _LIBCPP_CONSTEXPR_AFTER_CXX20 virtual ~__shared_count() = default;
 private:
     virtual void __on_zero_shared() _NOEXCEPT = 0;
 
 public:
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX20
     explicit __shared_count(long __refs = 0) _NOEXCEPT
         : __shared_owners_(__refs) {}
 
@@ -3197,7 +3203,7 @@ public:
     void __add_shared() _NOEXCEPT {
       __libcpp_atomic_refcount_increment(__shared_owners_);
     }
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX20
     bool __release_shared() _NOEXCEPT {
       if (__libcpp_atomic_refcount_decrement(__shared_owners_) == -1) {
         __on_zero_shared();
@@ -3218,12 +3224,12 @@ class _LIBCPP_TYPE_VIS __shared_weak_count
     long __shared_weak_owners_;
 
 public:
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX20
     explicit __shared_weak_count(long __refs = 0) _NOEXCEPT
         : __shared_count(__refs),
           __shared_weak_owners_(__refs) {}
 protected:
-    virtual ~__shared_weak_count();
+    _LIBCPP_CONSTEXPR_AFTER_CXX20 virtual ~__shared_weak_count() = default;
 
 public:
 #if defined(_LIBCPP_BUILDING_LIBRARY) && \
@@ -3240,13 +3246,32 @@ public:
     void __add_weak() _NOEXCEPT {
       __libcpp_atomic_refcount_increment(__shared_weak_owners_);
     }
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX20
     void __release_shared() _NOEXCEPT {
       if (__shared_count::__release_shared())
-        __release_weak();
+        __release_weak_constexpr();
     }
 #endif
     void __release_weak() _NOEXCEPT;
+
+    _LIBCPP_CONSTEXPR_AFTER_CXX20 void __release_weak_constexpr() _NOEXCEPT
+    { // AFG duplicated from memory.cpp
+      if (__libcpp_is_constant_evaluated()) {
+        if (__shared_weak_owners_ == 0)
+        {
+          // no need to do this store, because we are about
+          // to destroy everything.
+          //__libcpp_atomic_store(&__shared_weak_owners_, -1, _AO_Release);
+          __on_zero_shared_weak();
+        }
+        else if (--__shared_weak_owners_ == -1)
+          __on_zero_shared_weak();    
+      } else {
+        __release_weak();
+      }
+    }
+
+
     _LIBCPP_INLINE_VISIBILITY
     long use_count() const _NOEXCEPT {return __shared_count::use_count();}
     __shared_weak_count* lock() _NOEXCEPT;
@@ -3262,23 +3287,23 @@ class __shared_ptr_pointer
 {
     __compressed_pair<__compressed_pair<_Tp, _Dp>, _Alloc> __data_;
 public:
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX20
     __shared_ptr_pointer(_Tp __p, _Dp __d, _Alloc __a)
         :  __data_(__compressed_pair<_Tp, _Dp>(__p, _VSTD::move(__d)), _VSTD::move(__a)) {}
 
 #ifndef _LIBCPP_NO_RTTI
-    virtual const void* __get_deleter(const type_info&) const _NOEXCEPT;
+    _LIBCPP_CONSTEXPR_AFTER_CXX20 virtual const void* __get_deleter(const type_info&) const _NOEXCEPT;
 #endif
 
 private:
-    virtual void __on_zero_shared() _NOEXCEPT;
-    virtual void __on_zero_shared_weak() _NOEXCEPT;
+    _LIBCPP_CONSTEXPR_AFTER_CXX20 virtual void __on_zero_shared() _NOEXCEPT;
+    _LIBCPP_CONSTEXPR_AFTER_CXX20 virtual void __on_zero_shared_weak() _NOEXCEPT;
 };
 
 #ifndef _LIBCPP_NO_RTTI
 
 template <class _Tp, class _Dp, class _Alloc>
-const void*
+_LIBCPP_CONSTEXPR_AFTER_CXX20 const void*
 __shared_ptr_pointer<_Tp, _Dp, _Alloc>::__get_deleter(const type_info& __t) const _NOEXCEPT
 {
     return __t == typeid(_Dp) ? _VSTD::addressof(__data_.first().second()) : nullptr;
@@ -3287,7 +3312,7 @@ __shared_ptr_pointer<_Tp, _Dp, _Alloc>::__get_deleter(const type_info& __t) cons
 #endif  // _LIBCPP_NO_RTTI
 
 template <class _Tp, class _Dp, class _Alloc>
-void
+_LIBCPP_CONSTEXPR_AFTER_CXX20 void
 __shared_ptr_pointer<_Tp, _Dp, _Alloc>::__on_zero_shared() _NOEXCEPT
 {
     __data_.first().second()(__data_.first().first());
@@ -3295,7 +3320,7 @@ __shared_ptr_pointer<_Tp, _Dp, _Alloc>::__on_zero_shared() _NOEXCEPT
 }
 
 template <class _Tp, class _Dp, class _Alloc>
-void
+_LIBCPP_CONSTEXPR_AFTER_CXX20 void
 __shared_ptr_pointer<_Tp, _Dp, _Alloc>::__on_zero_shared_weak() _NOEXCEPT
 {
     typedef typename __allocator_traits_rebind<_Alloc, __shared_ptr_pointer>::type _Al;
@@ -3410,7 +3435,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     _LIBCPP_CONSTEXPR shared_ptr(nullptr_t) _NOEXCEPT;
     template<class _Yp>
-        explicit shared_ptr(_Yp* __p,
+        _LIBCPP_CONSTEXPR_AFTER_CXX20 explicit shared_ptr(_Yp* __p,
                             typename enable_if<__compatible_with<_Yp, element_type>::value, __nat>::type = __nat());
     template<class _Yp, class _Dp>
         shared_ptr(_Yp* __p, _Dp __d,
@@ -3459,7 +3484,7 @@ public:
                        __nat
                    >::type = __nat());
 
-    ~shared_ptr();
+    _LIBCPP_CONSTEXPR_AFTER_CXX20 ~shared_ptr();
 
     _LIBCPP_INLINE_VISIBILITY
     shared_ptr& operator=(const shared_ptr& __r) _NOEXCEPT;
@@ -3533,7 +3558,7 @@ public:
 
     _LIBCPP_INLINE_VISIBILITY
     element_type* get() const _NOEXCEPT {return __ptr_;}
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX20
     typename add_lvalue_reference<element_type>::type operator*() const _NOEXCEPT
         {return *__ptr_;}
     _LIBCPP_INLINE_VISIBILITY
@@ -3623,7 +3648,8 @@ private:
             }
         }
 
-    _LIBCPP_INLINE_VISIBILITY void __enable_weak_this(...) _NOEXCEPT {}
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX20
+    void __enable_weak_this(...) _NOEXCEPT {}
 
     template <class, class _Yp>
         struct __shared_ptr_default_delete
@@ -3668,7 +3694,7 @@ shared_ptr<_Tp>::shared_ptr(nullptr_t) _NOEXCEPT
 
 template<class _Tp>
 template<class _Yp>
-shared_ptr<_Tp>::shared_ptr(_Yp* __p,
+_LIBCPP_CONSTEXPR_AFTER_CXX20 shared_ptr<_Tp>::shared_ptr(_Yp* __p,
                             typename enable_if<__compatible_with<_Yp, element_type>::value, __nat>::type)
     : __ptr_(__p)
 {
@@ -3908,7 +3934,7 @@ shared_ptr<_Tp>::shared_ptr(unique_ptr<_Yp, _Dp>&& __r,
 }
 
 template<class _Tp>
-shared_ptr<_Tp>::~shared_ptr()
+_LIBCPP_CONSTEXPR_AFTER_CXX20 shared_ptr<_Tp>::~shared_ptr()
 {
     if (__cntrl_)
         __cntrl_->__release_shared();
@@ -4463,7 +4489,7 @@ template<class _Tp>
 weak_ptr<_Tp>::~weak_ptr()
 {
     if (__cntrl_)
-        __cntrl_->__release_weak();
+        __cntrl_->__release_weak_constexpr();
 }
 
 template<class _Tp>

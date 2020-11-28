@@ -28,6 +28,7 @@ bad_weak_ptr::what() const _NOEXCEPT
     return "bad_weak_ptr";
 }
 
+#if 0 // AFG HACK
 __shared_count::~__shared_count()
 {
 }
@@ -35,6 +36,7 @@ __shared_count::~__shared_count()
 __shared_weak_count::~__shared_weak_count()
 {
 }
+#endif
 
 #if defined(_LIBCPP_DEPRECATED_ABI_LEGACY_LIBRARY_DEFINITIONS_FOR_INLINE_FUNCTIONS)
 void
