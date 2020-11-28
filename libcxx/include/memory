@@ -1578,7 +1578,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     void deallocate(_Tp* __p, size_t __n) _NOEXCEPT {
         if (__libcpp_is_constant_evaluated()) {
-            delete __p;
+            ::operator delete(__p);
         } else {
             _VSTD::__libcpp_deallocate((void*)__p, __n * sizeof(_Tp), _LIBCPP_ALIGNOF(_Tp));
         }
@@ -2879,8 +2879,8 @@ private:
     _Alloc& __alloc_;
     size_type __s_;
 public:
-    _LIBCPP_INLINE_VISIBILITY __allocator_destructor(_Alloc& __a, size_type __s)
-             _NOEXCEPT
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX20
+    __allocator_destructor(_Alloc& __a, size_type __s) _NOEXCEPT
         : __alloc_(__a), __s_(__s) {}
     _LIBCPP_INLINE_VISIBILITY
     void operator()(pointer __p) _NOEXCEPT
@@ -3339,13 +3339,13 @@ class __shared_ptr_emplace
     __compressed_pair<_Alloc, _Tp> __data_;
 public:
 
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX20
     __shared_ptr_emplace(_Alloc __a)
         :  __data_(_VSTD::move(__a), __value_init_tag()) {}
 
 #ifndef _LIBCPP_CXX03_LANG
     template <class ..._Args>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX20
         __shared_ptr_emplace(_Alloc __a, _Args&& ...__args)
             :  __data_(piecewise_construct, _VSTD::forward_as_tuple(__a),
                    _VSTD::forward_as_tuple(_VSTD::forward<_Args>(__args)...)) {}
@@ -3357,24 +3357,24 @@ public:
 #endif
 
 private:
-    virtual void __on_zero_shared() _NOEXCEPT;
-    virtual void __on_zero_shared_weak() _NOEXCEPT;
+    _LIBCPP_CONSTEXPR_AFTER_CXX20 virtual void __on_zero_shared() _NOEXCEPT;
+    _LIBCPP_CONSTEXPR_AFTER_CXX20 virtual void __on_zero_shared_weak() _NOEXCEPT;
 public:
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX20
     _Alloc& __get_alloc() _NOEXCEPT {return __data_.first();}
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX20
     _Tp* __get_elem() _NOEXCEPT {return _VSTD::addressof(__data_.second());}
 };
 
 template <class _Tp, class _Alloc>
-void
+_LIBCPP_CONSTEXPR_AFTER_CXX20 void
 __shared_ptr_emplace<_Tp, _Alloc>::__on_zero_shared() _NOEXCEPT
 {
     __get_elem()->~_Tp();
 }
 
 template <class _Tp, class _Alloc>
-void
+_LIBCPP_CONSTEXPR_AFTER_CXX20 void
 __shared_ptr_emplace<_Tp, _Alloc>::__on_zero_shared_weak() _NOEXCEPT
 {
     typedef typename __allocator_traits_rebind<_Alloc, __shared_ptr_emplace>::type _Al;
@@ -3453,7 +3453,7 @@ public:
         shared_ptr(const shared_ptr<_Yp>& __r,
                    typename enable_if<__compatible_with<_Yp, element_type>::value, __nat>::type = __nat())
                        _NOEXCEPT;
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX20
     shared_ptr(shared_ptr&& __r) _NOEXCEPT;
     template<class _Yp> _LIBCPP_INLINE_VISIBILITY  shared_ptr(shared_ptr<_Yp>&& __r,
                    typename enable_if<__compatible_with<_Yp, element_type>::value, __nat>::type = __nat())
@@ -3608,7 +3608,7 @@ public:
 #endif  // _LIBCPP_NO_RTTI
 
     template<class _Yp, class _CntrlBlk>
-    static shared_ptr<_Tp>
+    _LIBCPP_CONSTEXPR_AFTER_CXX20 static shared_ptr<_Tp>
     __create_with_control_block(_Yp* __p, _CntrlBlk* __cntrl) _NOEXCEPT
     {
         shared_ptr<_Tp> __r;
@@ -3843,7 +3843,7 @@ shared_ptr<_Tp>::shared_ptr(const shared_ptr<_Yp>& __r,
 }
 
 template<class _Tp>
-inline
+inline _LIBCPP_CONSTEXPR_AFTER_CXX20
 shared_ptr<_Tp>::shared_ptr(shared_ptr&& __r) _NOEXCEPT
     : __ptr_(__r.__ptr_),
       __cntrl_(__r.__cntrl_)
@@ -4076,7 +4076,7 @@ shared_ptr<_Tp>::reset(_Yp* __p, _Dp __d, _Alloc __a)
 }
 
 template<class _Tp, class ..._Args>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX20
 typename enable_if
 <
     !is_array<_Tp>::value,
