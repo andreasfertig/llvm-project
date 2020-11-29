@@ -3324,12 +3324,10 @@ _LIBCPP_CONSTEXPR_AFTER_CXX20 void
 __shared_ptr_pointer<_Tp, _Dp, _Alloc>::__on_zero_shared_weak() _NOEXCEPT
 {
     typedef typename __allocator_traits_rebind<_Alloc, __shared_ptr_pointer>::type _Al;
-    typedef allocator_traits<_Al> _ATraits;
-    typedef pointer_traits<typename _ATraits::pointer> _PTraits;
 
     _Al __a(__data_.second());
     __data_.second().~_Alloc();
-    __a.deallocate(_PTraits::pointer_to(*this), 1);
+    delete this;
 }
 
 template <class _Tp, class _Alloc>
