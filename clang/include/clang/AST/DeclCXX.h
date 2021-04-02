@@ -1169,6 +1169,9 @@ public:
   /// Determine whether this class has any variant members.
   bool hasVariantMembers() const { return data().HasVariantMembers; }
 
+  bool isConstexpr() const { return data().IsCXX23Constexpr; }
+  void setConstexpr(bool b) { data().IsCXX23Constexpr = b; }
+
   /// Determine whether this class has a trivial default constructor
   /// (C++11 [class.ctor]p5).
   bool hasTrivialDefaultConstructor() const {

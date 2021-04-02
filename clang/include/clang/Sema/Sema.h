@@ -2868,6 +2868,7 @@ public:
   void ActOnStartCXXMemberDeclarations(Scope *S, Decl *TagDecl,
                                        SourceLocation FinalLoc,
                                        bool IsFinalSpelledSealed,
+                                       ConstexprSpecKind ConstexprSpecifier,
                                        SourceLocation LBraceLoc);
 
   /// ActOnTagFinishDefinition - Invoked once we have finished parsing

@@ -3973,6 +3973,12 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
       continue;
     }
 
+    if (getLangOpts().CPlusPlus && DSContext == DeclSpecContext::DSC_class) {
+      CXXRecordDecl *CurDecl = Actions.getCurrentClass(nullptr, nullptr);
+      if(CurDecl && CurDecl->isConstexpr() && DS.isFriendSpecified())
+        DS.SetConstexprSpec(CSK_constexpr, Loc, PrevSpec, DiagID);
+    }
+
     DS.SetRangeEnd(ConsumedEnd.isValid() ? ConsumedEnd : Tok.getLocation());
 
     // If the specifier wasn't legal, issue a diagnostic.

@@ -8430,7 +8430,10 @@ static FunctionDecl *CreateNewFunctionDecl(Sema &SemaRef, Declarator &D,
           diag::err_abstract_type_in_decl, SemaRef.AbstractReturnType))
     D.setInvalidType();
 
-  if (Name.getNameKind() == DeclarationName::CXXConstructorName) {
+    if(DC->isRecord() && (ConstexprKind == CSK_unspecified) && cast<CXXRecordDecl>(DC)->isConstexpr())
+      ConstexprKind = CSK_constexpr;
+
+    if (Name.getNameKind() == DeclarationName::CXXConstructorName) {
     // This is a C++ constructor declaration.
     assert(DC->isRecord() &&
            "Constructors can only be declared in a member context");
@@ -16177,6 +16180,7 @@ Decl *Sema::ActOnObjCContainerStartDefinition(Decl *IDecl) {
 void Sema::ActOnStartCXXMemberDeclarations(Scope *S, Decl *TagD,
                                            SourceLocation FinalLoc,
                                            bool IsFinalSpelledSealed,
+                                           ConstexprSpecKind ConstexprSpecifier,
                                            SourceLocation LBraceLoc) {
   AdjustDeclIfTemplate(TagD);
   CXXRecordDecl *Record = cast<CXXRecordDecl>(TagD);
@@ -16185,6 +16189,8 @@ void Sema::ActOnStartCXXMemberDeclarations(Scope *S, Decl *TagD,
 
   if (!Record->getIdentifier())
     return;
+
+  Record->setConstexpr(ConstexprSpecifier == CSK_constexpr);
 
   if (FinalLoc.isValid())
     Record->addAttr(FinalAttr::Create(

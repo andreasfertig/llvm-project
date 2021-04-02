@@ -2988,6 +2988,7 @@ private:
   void ParseCXXMemberSpecification(SourceLocation StartLoc,
                                    SourceLocation AttrFixitLoc,
                                    ParsedAttributesWithRange &Attrs,
+                                   ConstexprSpecKind ConstexprSpecifier,
                                    unsigned TagType,
                                    Decl *TagDecl);
   ExprResult ParseCXXMemberInitializer(Decl *D, bool IsFunction,

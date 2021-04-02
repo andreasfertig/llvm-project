@@ -75,7 +75,7 @@ void LazyASTUnresolvedSet::getFromExternalSource(ASTContext &C) const {
 CXXRecordDecl::DefinitionData::DefinitionData(CXXRecordDecl *D)
     : UserDeclaredConstructor(false), UserDeclaredSpecialMembers(0),
       Aggregate(true), PlainOldData(true), Empty(true), Polymorphic(false),
-      Abstract(false), IsStandardLayout(true), IsCXX11StandardLayout(true),
+      Abstract(false), IsStandardLayout(true), IsCXX11StandardLayout(true), IsCXX23Constexpr(false),
       HasBasesWithFields(false), HasBasesWithNonStaticDataMembers(false),
       HasPrivateFields(false), HasProtectedFields(false),
       HasPublicFields(false), HasMutableFields(false), HasVariantMembers(false),
@@ -2128,6 +2128,9 @@ CXXMethodDecl *CXXMethodDecl::Create(ASTContext &C, CXXRecordDecl *RD,
                                      ConstexprSpecKind ConstexprKind,
                                      SourceLocation EndLocation,
                                      Expr *TrailingRequiresClause) {
+  if((ConstexprKind == CSK_unspecified) && RD->isConstexpr())
+      ConstexprKind = CSK_constexpr;
+
   return new (C, RD)
       CXXMethodDecl(CXXMethod, C, RD, StartLoc, NameInfo, T, TInfo, SC,
                     isInline, ConstexprKind, EndLocation,

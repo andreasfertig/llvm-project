@@ -1679,6 +1679,12 @@ void Parser::ParseClassSpecifier(tok::TokenKind TagTokKind,
   // If there are attributes after class name, parse them.
   MaybeParseCXX11Attributes(Attributes);
 
+  ConstexprSpecKind ConstexprSpecifier = ConstexprSpecKind::CSK_unspecified;
+  if(getLangOpts().CPlusPlus20 && Tok.is(tok::kw_constexpr)) {
+    ConstexprSpecifier = ConstexprSpecKind::CSK_constexpr;
+    ConsumeToken();
+  }
+
   const PrintingPolicy &Policy = Actions.getASTContext().getPrintingPolicy();
   Sema::TagUseKind TUK;
   if (isDefiningTypeSpecifierContext(DSC) == AllowDefiningTypeSpec::No ||
@@ -1747,6 +1753,11 @@ void Parser::ParseClassSpecifier(tok::TokenKind TagTokKind,
     }
   } else
     TUK = Sema::TUK_Reference;
+
+  if((TUK != Sema::TUK_Definition) && (ConstexprSpecifier == CSK_constexpr)) {
+    //Diag(Tok, diag::err_typecheck_decl_incomplete_type) << TagType;
+    Diag(Tok, diag::err_expected) << "forward decl";
+  }
 
   // Forbid misplaced attributes. In cases of a reference, we pass attributes
   // to caller to handle.
@@ -1959,7 +1970,9 @@ void Parser::ParseClassSpecifier(tok::TokenKind TagTokKind,
       SkipCXXMemberSpecification(StartLoc, AttrFixitLoc, TagType,
                                  TagOrTempResult.get());
     else if (getLangOpts().CPlusPlus)
-      ParseCXXMemberSpecification(StartLoc, AttrFixitLoc, attrs, TagType,
+      ParseCXXMemberSpecification(StartLoc, AttrFixitLoc, attrs,
+                                  ConstexprSpecifier,
+                                  TagType,
                                   TagOrTempResult.get());
     else {
       Decl *D =
@@ -3176,6 +3189,7 @@ Parser::DeclGroupPtrTy Parser::ParseCXXClassMemberDeclarationWithPragmas(
 void Parser::ParseCXXMemberSpecification(SourceLocation RecordLoc,
                                          SourceLocation AttrFixitLoc,
                                          ParsedAttributesWithRange &Attrs,
+                                         ConstexprSpecKind ConstexprSpecifier,
                                          unsigned TagType, Decl *TagDecl) {
   assert((TagType == DeclSpec::TST_struct ||
          TagType == DeclSpec::TST_interface ||
@@ -3326,6 +3340,7 @@ void Parser::ParseCXXMemberSpecification(SourceLocation RecordLoc,
   if (TagDecl)
     Actions.ActOnStartCXXMemberDeclarations(getCurScope(), TagDecl, FinalLoc,
                                             IsFinalSpelledSealed,
+                                            ConstexprSpecifier,
                                             T.getOpenLocation());
 
   // C++ 11p3: Members of a class defined with the keyword class are private
