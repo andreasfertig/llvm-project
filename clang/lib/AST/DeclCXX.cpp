@@ -75,7 +75,7 @@ void LazyASTUnresolvedSet::getFromExternalSource(ASTContext &C) const {
 CXXRecordDecl::DefinitionData::DefinitionData(CXXRecordDecl *D)
     : UserDeclaredConstructor(false), UserDeclaredSpecialMembers(0),
       Aggregate(true), PlainOldData(true), Empty(true), Polymorphic(false),
-      Abstract(false), IsStandardLayout(true), IsCXX11StandardLayout(true), IsCXX23Constexpr(false),
+      Abstract(false), IsStandardLayout(true), IsCXX11StandardLayout(true), IsCXX23Constexpr(false), IsCXX23Consteval(false),
       HasBasesWithFields(false), HasBasesWithNonStaticDataMembers(false),
       HasPrivateFields(false), HasProtectedFields(false),
       HasPublicFields(false), HasMutableFields(false), HasVariantMembers(false),
@@ -2130,6 +2130,8 @@ CXXMethodDecl *CXXMethodDecl::Create(ASTContext &C, CXXRecordDecl *RD,
                                      Expr *TrailingRequiresClause) {
   if((ConstexprKind == CSK_unspecified) && RD->isConstexpr())
       ConstexprKind = CSK_constexpr;
+  else if((ConstexprKind == CSK_unspecified) && RD->isConsteval())
+      ConstexprKind = CSK_consteval;
 
   return new (C, RD)
       CXXMethodDecl(CXXMethod, C, RD, StartLoc, NameInfo, T, TInfo, SC,
@@ -2566,6 +2568,12 @@ CXXConstructorDecl *CXXConstructorDecl::Create(
   assert(NameInfo.getName().getNameKind()
          == DeclarationName::CXXConstructorName &&
          "Name must refer to a constructor");
+
+  if(RD->isConstexpr())
+    ConstexprKind = CSK_constexpr;
+  else if(RD->isConsteval())
+    ConstexprKind = CSK_consteval;
+
   unsigned Extra =
       additionalSizeToAlloc<InheritedConstructor, ExplicitSpecifier>(
           Inherited ? 1 : 0, ES.getExpr() ? 1 : 0);
@@ -2701,6 +2709,12 @@ CXXDestructorDecl *CXXDestructorDecl::Create(
   assert(NameInfo.getName().getNameKind()
          == DeclarationName::CXXDestructorName &&
          "Name must refer to a destructor");
+
+  if(RD->isConstexpr())
+    ConstexprKind = CSK_constexpr;
+  else if(RD->isConsteval())
+    ConstexprKind = CSK_consteval;
+
   return new (C, RD)
       CXXDestructorDecl(C, RD, StartLoc, NameInfo, T, TInfo, isInline,
                         isImplicitlyDeclared, ConstexprKind,

@@ -8432,6 +8432,8 @@ static FunctionDecl *CreateNewFunctionDecl(Sema &SemaRef, Declarator &D,
 
     if(DC->isRecord() && (ConstexprKind == CSK_unspecified) && cast<CXXRecordDecl>(DC)->isConstexpr())
       ConstexprKind = CSK_constexpr;
+    else if(DC->isRecord() && (ConstexprKind == CSK_unspecified) && cast<CXXRecordDecl>(DC)->isConsteval())
+      ConstexprKind = CSK_consteval;
 
     if (Name.getNameKind() == DeclarationName::CXXConstructorName) {
     // This is a C++ constructor declaration.
@@ -9089,8 +9091,8 @@ Sema::ActOnFunctionDeclarator(Scope *S, Declarator &D, DeclContext *DC,
       // destructors cannot be declared constexpr.
       if (isa<CXXDestructorDecl>(NewFD) &&
           (!getLangOpts().CPlusPlus20 || ConstexprKind == CSK_consteval)) {
-        Diag(D.getDeclSpec().getConstexprSpecLoc(), diag::err_constexpr_dtor)
-            << ConstexprKind;
+        /*Diag(D.getDeclSpec().getConstexprSpecLoc(), diag::err_constexpr_dtor)
+            << ConstexprKind;*/
         NewFD->setConstexprKind(getLangOpts().CPlusPlus20 ? CSK_unspecified : CSK_constexpr);
       }
       // C++20 [dcl.constexpr]p2: An allocation function, or a
@@ -16191,6 +16193,7 @@ void Sema::ActOnStartCXXMemberDeclarations(Scope *S, Decl *TagD,
     return;
 
   Record->setConstexpr(ConstexprSpecifier == CSK_constexpr);
+  Record->setConsteval(ConstexprSpecifier == CSK_consteval);
 
   if (FinalLoc.isValid())
     Record->addAttr(FinalAttr::Create(

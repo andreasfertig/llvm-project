@@ -1683,6 +1683,9 @@ void Parser::ParseClassSpecifier(tok::TokenKind TagTokKind,
   if(getLangOpts().CPlusPlus20 && Tok.is(tok::kw_constexpr)) {
     ConstexprSpecifier = ConstexprSpecKind::CSK_constexpr;
     ConsumeToken();
+  } else if(getLangOpts().CPlusPlus20 && Tok.is(tok::kw_consteval)) {
+    ConstexprSpecifier = ConstexprSpecKind::CSK_consteval;
+    ConsumeToken();
   }
 
   const PrintingPolicy &Policy = Actions.getASTContext().getPrintingPolicy();
@@ -1754,7 +1757,7 @@ void Parser::ParseClassSpecifier(tok::TokenKind TagTokKind,
   } else
     TUK = Sema::TUK_Reference;
 
-  if((TUK != Sema::TUK_Definition) && (ConstexprSpecifier == CSK_constexpr)) {
+  if((TUK != Sema::TUK_Definition) && ((ConstexprSpecifier == CSK_constexpr) || (ConstexprSpecifier == CSK_consteval))) {
     //Diag(Tok, diag::err_typecheck_decl_incomplete_type) << TagType;
     Diag(Tok, diag::err_expected) << "forward decl";
   }

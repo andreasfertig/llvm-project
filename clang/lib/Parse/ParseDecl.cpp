@@ -3977,6 +3977,8 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
       CXXRecordDecl *CurDecl = Actions.getCurrentClass(nullptr, nullptr);
       if(CurDecl && CurDecl->isConstexpr() && DS.isFriendSpecified())
         DS.SetConstexprSpec(CSK_constexpr, Loc, PrevSpec, DiagID);
+      if(CurDecl && CurDecl->isConsteval() && DS.isFriendSpecified())
+        DS.SetConstexprSpec(CSK_consteval, Loc, PrevSpec, DiagID);
     }
 
     DS.SetRangeEnd(ConsumedEnd.isValid() ? ConsumedEnd : Tok.getLocation());
