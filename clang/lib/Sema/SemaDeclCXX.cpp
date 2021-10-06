@@ -3272,6 +3272,12 @@ Sema::ActOnCXXMemberDeclarator(Scope *S, AccessSpecifier AS, Declarator &D,
                        DS.getStorageClassSpec() == DeclSpec::SCS_mutable) &&
                       !isFunc);
 
+  if(!isFunc && (DS.getStorageClassSpec() == DeclSpec::SCS_static) && !DS.hasConstexprSpecifier() && cast<CXXRecordDecl>(CurContext)->isConstexpr()) {
+    const char *PrevSpec = nullptr;
+    unsigned DiagID = 0;
+    D.getMutableDeclSpec().SetConstexprSpec(CSK_constexpr, {},PrevSpec, DiagID);
+  }
+
   if (DS.hasConstexprSpecifier() && isInstField) {
     SemaDiagnosticBuilder B =
         Diag(DS.getConstexprSpecLoc(), diag::err_invalid_constexpr_member);
