@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-// UNSUPPORTED: c++03, c++11, c++14
+// UNSUPPORTED: c++03, c++11, c++14, c++17
 // <optional>
 
 // template <class T> constexpr bool operator<(const optional<T>& x, nullopt_t) noexcept;
