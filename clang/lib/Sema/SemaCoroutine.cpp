@@ -1290,8 +1290,17 @@ bool CoroutineStmtBuilder::makeReturnOnAllocFailure() {
 static bool collectPlacementArgs(Sema &S, FunctionDecl &FD, SourceLocation Loc,
                                  SmallVectorImpl<Expr *> &PlacementArgs) {
   if (auto *MD = dyn_cast<CXXMethodDecl>(&FD)) {
-    if (MD->isImplicitObjectMemberFunction() && !isLambdaCallOperator(MD)) {
-      ExprResult ThisExpr = S.ActOnCXXThis(Loc);
+    if (MD->isImplicitObjectMemberFunction() &&
+        !(isLambdaCallOperator(MD) && MD->isStatic())) {
+      ExprResult ThisExpr{};
+
+      if (isLambdaCallOperator(MD)) {
+        ThisExpr = S.BuildCXXThisExpr(
+            Loc, MD->getThisType().getNonReferenceType(), true, true);
+      } else {
+        ThisExpr = S.ActOnCXXThis(Loc);
+      }
+
       if (ThisExpr.isInvalid())
         return false;
       ThisExpr = S.CreateBuiltinUnaryOp(Loc, UO_Deref, ThisExpr.get());

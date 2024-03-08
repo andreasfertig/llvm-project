@@ -1437,10 +1437,14 @@ ExprResult Sema::ActOnCXXThis(SourceLocation Loc) {
   return BuildCXXThisExpr(Loc, ThisTy, /*IsImplicit=*/false);
 }
 
-Expr *Sema::BuildCXXThisExpr(SourceLocation Loc, QualType Type,
-                             bool IsImplicit) {
+Expr *Sema::BuildCXXThisExpr(SourceLocation Loc, QualType Type, bool IsImplicit,
+                             bool ThisRefersToClosureObject) {
   auto *This = CXXThisExpr::Create(Context, Loc, Type, IsImplicit);
-  MarkThisReferenced(This);
+
+  if (!ThisRefersToClosureObject) {
+    MarkThisReferenced(This);
+  }
+
   return This;
 }
 
