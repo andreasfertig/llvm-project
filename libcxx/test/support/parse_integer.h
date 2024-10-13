@@ -10,6 +10,9 @@
 #define LIBCPP_TEST_SUPPORT_PARSE_INTEGER_H
 
 #include <string>
+#include <charconv>
+#include <iterator>
+#include <algorithm>
 
 namespace detail {
 template <class T>
@@ -62,11 +65,28 @@ struct parse_integer_impl<unsigned long long> {
         return std::stoull(str);
     }
 };
+
+template <class T, class CharT>
+constexpr T convert(std::basic_string<CharT> const& str) {
+  T result{};
+  std::from_chars(str.data(), str.data() + str.size(), result);
+
+  return result;
+}
+
+template <class T>
+constexpr T convert(std::basic_string<wchar_t> const& str) {
+  std::string s{};
+  std::transform(str.begin(), str.end(), std::back_inserter(s), [](wchar_t c) { return static_cast<char>(c); });
+
+  return convert<T>(s);
+}
+
 } // end namespace detail
 
 template <class T, class CharT>
-T parse_integer(std::basic_string<CharT> const& str) {
-    return detail::parse_integer_impl<T>()(str);
+constexpr T parse_integer(std::basic_string<CharT> const& str) {
+    return detail::convert<T>(str);
 }
 
 #endif // LIBCPP_TEST_SUPPORT_PARSE_INTEGER_H

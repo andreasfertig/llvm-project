@@ -28,7 +28,7 @@
 #include "test_macros.h"
 
 template <class T>
-void test_signed() {
+constexpr void test_signed() {
   {
     std::wstring s = std::to_wstring(T(0));
     assert(s.size() == 1);
@@ -61,7 +61,7 @@ void test_signed() {
 }
 
 template <class T>
-void test_unsigned() {
+constexpr void test_unsigned() {
   {
     std::wstring s = std::to_wstring(T(0));
     assert(s.size() == 1);
@@ -104,13 +104,21 @@ void test_float() {
   }
 }
 
-int main(int, char**) {
+constexpr void test_all_integers()
+{
   test_signed<int>();
   test_signed<long>();
   test_signed<long long>();
   test_unsigned<unsigned>();
   test_unsigned<unsigned long>();
   test_unsigned<unsigned long long>();
+}
+
+int main(int, char**) {
+  test_all_integers();
+
+  [] consteval { test_all_integers(); }();
+
   test_float<float>();
   test_float<double>();
   test_float<long double>();
